@@ -1,0 +1,62 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+<script>
+    // 팔로우 취소 버튼
+    function deleteFollowBtn(poster_id) {
+        fetch(`/subscribe/deleteFollow/${poster_id}`, {
+            method: 'DELETE',
+        }).then(res => {
+            if (res.status === 200) {
+                alert('팔로우 취소되었습니다.');
+                location.reload();
+            } else {
+                alert('팔로우 취소에 실패했습니다.');
+            }
+        })
+    }
+</script>
+<div class="container" style="margin : 25px;">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>구독 목록</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>구독명</th>
+                        <td>구독일자</td>
+                        <td>새글 여부</td>
+                        <td>팔로우 취소</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (subscribeList && subscribeList.length > 0) { %>
+                        <% subscribeList.forEach((subscribe, index) => { %>
+                            <tr>
+                                <td><a href="/subscribe/poster/<%= subscribe.poster_id %>"><%= subscribe.poster_id %></a></td>
+                                <td><%= subscribe.reg_date %></td>
+                                <td>
+                                    <% if (unreadWriterSeq.includes(subscribe.poster_id)) { %>
+                                        <span style="color: red; border: 4px solid;">New</span>
+                                    <% } %>
+                                </td>
+                                <td><button onclick="deleteFollowBtn('<%= subscribe.poster_id %>')" type="button" class="btn btn-primary">취소</button></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="1">구독자가 없습니다.</td>
+                            <td colspan="1"></td>
+                            <td colspan="1"></td>
+                            <td colspan="1"></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

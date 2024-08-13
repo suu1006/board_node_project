@@ -1,0 +1,47 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %> 
+<div class="container" style="padding : 30px">
+    <div class="header-container d-flex justify-content-between align-items-center">
+        <h2 class="my-4">전체 포스팅 목록</h2>
+    </div>
+    <div class="table-container">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">번호</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">내용</th>
+                    <th scope="col">작성자</th>
+                    <th scope="col">작성일</th>
+                    <th scope="col">수정자</th>
+                    <th scope="col">수정일</th>
+                </tr>
+            </thead>
+            <tbody id="postList">
+                <% if (myPostList && myPostList.length > 0) { %>
+                    <% myPostList.forEach(function(myPost) { %>
+                        <tr>
+                            <td><%= myPost.seq %></td>
+                            <td><a href="/boards/<%= myPost.seq %>"><%= myPost.title %></a></td>
+                            <td><%= myPost.content %></td>
+                            <td><%= myPost.writer %></td>
+                            <td><%= myPost.reg_date %></td>
+                            <td><%= myPost.updater %></td>
+                            <td><%= myPost.update_date %></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7">Not found</td>
+                    </tr>
+                <% } %>                        
+            </tbody>
+        </table>
+    </div>
+</div> 
+

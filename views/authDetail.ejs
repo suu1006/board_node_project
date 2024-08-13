@@ -1,0 +1,365 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+<script>
+    // 수정 버튼 클릭 시 (disabled 해제)
+    function handleUpdate() {
+        document.getElementById('name').removeAttribute('disabled'); // 권한명
+        document.getElementById('description').removeAttribute('disabled'); // 권한 설명
+        document.getElementById('type').style.display = 'block'; // 접근대상 Selectbox
+        document.getElementById('userTableContainer').style.display = 'block'; // 유저 테이블 표시
+        document.getElementById('showUserTable').style.display = 'none'; // 기존 데이터 테이블 숨기기
+        const menuCheckboxes = document.querySelectorAll('input[name="menu"]'); 
+        menuCheckboxes.forEach(checkbox => {
+            checkbox.removeAttribute('disabled'); // 메뉴 체크박스 해제
+        });
+        document.getElementById('updateBtn').style.display = 'none'; // 수정 버튼 숨기기
+        document.getElementById('updateSaveBtn').style.display = 'block'; // 저장 버튼 표시
+
+        // 메뉴 체크박스
+        checkSelectedMenu();
+
+        // 접근대상 - selectbox 
+        const roleType = document.getElementById('authType').value; // admin
+        const typeSelect = document.getElementById('type');
+        typeSelect.value = roleType;
+        showUserList(); 
+    }
+
+    async function fetchUsersAndAdmins() {
+        try {
+            const response = await fetch('/auth/userAndAdminList');
+            if (!response.ok) {
+                throw new Error('유저 및 관리자 조회 오류');
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('유저 및 관리자 조회 오류', error);
+            return { userList: [], adminList: [] };
+        }
+    }
+
+    // selectbox 선택 시, 접근대상 변경
+    async function showUserList() {
+        const roleSelect = document.getElementById('type');
+        const userTableContainer = document.getElementById('userTableContainer');
+
+        // row 
+        if (roleSelect.value === 'user') {
+            userTableContainer.style.display = 'block';
+            const usersData = await fetchUsersAndAdmins();
+            renderTable(usersData.userList, 'user');
+        } else if (roleSelect.value === 'admin') {
+            userTableContainer.style.display = 'block';
+            const usersData = await fetchUsersAndAdmins();
+            renderTable(usersData.adminList, 'admin');
+        } else if (roleSelect.value === 'all') {
+            userTableContainer.style.display = 'block';
+            const usersData = await fetchUsersAndAdmins();
+            renderTable([...usersData.userList, ...usersData.adminList], 'all');
+        } else {
+            userTableContainer.style.display = 'none';
+        }
+
+        // 접근대상 체크박스
+        checkSelectedAuth();
+    }
+
+    // row 그리기
+    function renderTable(users, type) {
+        const userTableBody = document.getElementById('userTableBody');
+        userTableBody.innerHTML = '';
+
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+
+            const tdCheckbox = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = type === 'admin' ? 'selectedAdmins' : 'selectedUsers';
+            checkbox.value = user.seq;
+            tdCheckbox.appendChild(checkbox);
+            tr.appendChild(tdCheckbox);
+
+            const tdSeq = document.createElement('td');
+            tdSeq.textContent = user.seq;
+            tr.appendChild(tdSeq);
+
+            const tdName = document.createElement('td');
+            tdName.textContent = user.name;
+            tr.appendChild(tdName);
+
+            const tdEmail = document.createElement('td');
+            tdEmail.textContent = user.email;
+            tr.appendChild(tdEmail);
+            
+            userTableBody.appendChild(tr);
+        });
+    }
+
+    // 삭제 버튼
+    function handleDelete() {
+        const roleId = document.getElementById('roleId').value;
+        if (confirm('정말 삭제하시겠습니까?')) {
+            fetch(`/auth/delete/${roleId}`, {
+                method: 'DELETE',
+            }).then(res => {
+                if (res.ok) {
+                    window.location.href = '/authority';
+                } else {
+                    alert('삭제 실패');
+                }
+            }).catch(err => {
+                alert('삭제 실패');
+                console.error('삭제 실패', err);
+            });
+        }
+    }
+
+    function serializeForm(form) {
+        const obj = {};
+        const formData = new FormData(form);
+        formData.forEach((value, key) => {
+            obj[key] = value;
+        });
+        return obj;
+    }
+
+    // 접근대상 체크박스
+    function checkSelectedAuth() {
+        let selectedAuth = [];
+        const selectedAuthJson = document.getElementById('selectedAuth').value;
+
+        try {
+            selectedAuth = JSON.parse(selectedAuthJson);
+        } catch (e) {
+            console.error('selectedAuth JSON 파싱 오류:', e);
+            return; 
+        }
+
+        const selectedAuthData = selectedAuth.data;
+
+        if (selectedAuth.type === 'admin') {
+            selectedAuthData.forEach(auth => {
+                const checkbox = document.querySelector(`input[name="selectedAdmins"][value="${auth.seq}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        } else if (selectedAuth.type === 'user') {
+            selectedAuthData.forEach(auth => {
+                const checkbox = document.querySelector(`input[name="selectedUsers"][value="${auth.seq}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+    }
+
+    // 메뉴 체크박스
+    function checkSelectedMenu() {
+
+        // 선택된 메뉴 가져오기
+        const selectedMenusJson = document.getElementById('selectedMenus').value;
+        let selectedMenus = []; 
+        try {
+            selectedMenus = JSON.parse(selectedMenusJson);
+        } catch (e) {
+            console.error('selectedMenus JSON 파싱 오류:', e);
+        }
+
+        // 해당 메뉴 체크박스 체크
+        const menuCheckboxes = document.querySelectorAll('input[name="menu"]');
+        console.log('menuCheckboxes >> ', menuCheckboxes);
+        if (Array.isArray(selectedMenus)) {
+            const selectedMenuSeqs = new Set(selectedMenus.map(menu => menu.seq)); // Set : 중복 제거
+            menuCheckboxes.forEach(checkbox => {
+                if (selectedMenuSeqs.has(parseInt(checkbox.value))) {
+                    checkbox.checked = true;
+                }
+            });
+        } else {
+            console.error('selectedMenus는 배열이 아닙니다.');
+        }
+    }
+
+    function handleSave() {
+        event.preventDefault(); 
+
+        const roleId = document.getElementById('authSeq').value; // 시퀀스값
+        console.log('authSeq >> ', roleId);
+
+        const form = document.querySelector('#roleForm');
+        const formData = serializeForm(form);
+        const name = formData.name; // 권한명
+        const description = formData.description; // 권한설명
+        const selectedUsers = Array.from(document.querySelectorAll('input[name="selectedUsers"]:checked')).map(checkbox => checkbox.value); // 접근대상
+        const selectedAdmins = Array.from(document.querySelectorAll('input[name="selectedAdmins"]:checked')).map(checkbox => checkbox.value); // 접근대상 없으면 []
+        const selectedMenus = Array.from(document.querySelectorAll('input[name="menu"]:checked')).map(checkbox => checkbox.value); // 권한메뉴
+
+        // 유저 또는 관리자 선택 여부 결정
+        const checkedUser = selectedUsers.length > 0 ? selectedUsers : selectedAdmins;
+        const type = selectedUsers.length > 0 ? 'user' : 'admin';
+
+        if (name === '') {
+            alert('권한명을 입력해주세요');
+            return;
+        } else if (description === '') {
+            alert('권한 설명을 입력해주세요');
+            return;
+        } else if (checkedUser.length === 0) {
+            alert('접근대상을 선택해주세요');
+            return;
+        } else if (selectedMenus.length === 0) {
+            alert('권한 메뉴를 선택해주세요');
+            return;
+        }
+
+        const data = {
+            roleId,
+            type,
+            name,
+            description,
+            checkedUser : Array.isArray(checkedUser) ? checkedUser : [],
+            selectedMenus: Array.isArray(selectedMenus) ? selectedMenus : []
+        };
+
+        console.log('data >> ', data);
+
+        fetch(`/auth/update/${roleId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        }).then(res => {
+            if (res.ok) {
+                window.location.href = '/authority';
+            } else {
+                alert('수정 실패11');
+            }
+        }).catch(err => {
+            alert('수정 실패22');
+            console.error('수정 실패', err);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        checkSelectedMenu(); // 해당 메뉴 체크박스 체크
+    });
+</script>
+<style>
+    .container {
+        max-height: 80vh; 
+        overflow-y: auto;
+        padding: 20px; 
+        box-sizing: border-box; 
+    }
+
+    .btn-group {
+        margin-top: 20px;
+        float: right;
+    }
+    .btn-group .btn {
+        margin-right: 10px; 
+    }
+    #userTableContainer {
+        display: none;
+    }
+    #type {
+        display: none;
+    }
+</style>
+<div class="container">
+    <h1 class="my-4">권한 상세</h1>
+    <form id="roleForm">
+        <input type="hidden" id="authType" value="<%= type %>">
+        <input type="hidden" id="authSeq" value="<%= seq %>">
+        <input type="hidden" id="selectedMenus" value='<%- JSON.stringify(selectedMenu) %>'>
+        <input type="hidden" id="selectedAuth" value='<%- JSON.stringify(extractedData) %>'>
+        <div class="form-group">
+            <label for="name">권한명</label>
+            <input type="text" class="form-control" id="name" name="name" value="<%= authName %>" disabled required>
+        </div>
+        <div class="form-group">
+            <label for="roleDescription">권한 설명</label>
+            <textarea class="form-control" id="description" name="description" rows="3" disabled required><%= authDescription %></textarea>
+        </div>
+        <div class="form-group">
+            <label>권한 부여 메뉴</label><br>
+            <% if (menuList && menuList.length > 0) { %>
+                <% menuList.forEach(function(menu) { %>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="menu<%= menu.seq %>" name="menu" value="<%= menu.seq %>" disabled>
+                        <label class="form-check-label" for="menu<%= menu.seq %>"><%= menu.name %></label>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p>메뉴가 없습니다.</p>
+            <% } %>
+        </div>
+        <div class="form-group">
+            <label for="type">접근대상</label>
+            <select class="form-control" id="type" name="type" required onchange="showUserList()">
+                <option value="">접근대상 선택</option>
+                <option value="admin">관리자</option>
+                <option value="user">유저</option>
+            </select>
+        </div>
+        <div class="form-group" id="userTableContainer"> <!-- 추가될 테이블 -->
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th scope="col">번호</th>
+                        <th scope="col">이름</th>
+                        <th scope="col">이메일</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div class="form-group" id="showUserTable"> <!-- 기존 데이터 테이블 -->
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">번호</th>
+                        <th scope="col">이름</th>
+                        <th scope="col">이메일</th>
+                    </tr>
+                </thead>
+                <tbody id="showUserBody">
+                    <% if (extractedData.type === 'admin') { %>
+                        <% extractedData.data.forEach(function(admin) { %>
+                            <tr>
+                                <td scope="col"><%= admin.seq %></td>
+                                <td scope="col"><%= admin.name %></td>
+                                <td scope="col"><%= admin.email %></td>
+                            </tr>
+                        <% }); %>
+                    <% } else if (extractedData.type === 'user') { %>
+                        <% extractedData.data.forEach(function(user) { %>
+                            <tr>
+                                <td scope="col"><%= user.seq %></td>
+                                <td scope="col"><%= user.name %></td>
+                                <td scope="col"><%= user.email %></td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <div class="btn-group">
+            <button type="button" id="updateBtn" class="btn btn-primary" onclick="handleUpdate()">수정</button>
+            <button type="submit" id="updateSaveBtn" class="btn btn-primary" onclick="handleSave()" style="display: none;">저장</button>
+            <button type="button" class="btn btn-danger" onclick="handleDelete()">삭제</button>
+            <a href="/authority" class="btn btn-secondary">취소</a>
+        </div>
+    </form>
+</div>

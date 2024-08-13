@@ -1,0 +1,63 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %> 
+<script>
+    function handleMenuCreate() {
+        fetch('/menus/createPage', { 
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        }).then(res => {
+            if (res.status === 200) {
+                window.location.href = '/menus/createPage';
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+    }
+</script>
+<div class="container" style="padding : 30px">
+    <div class="d-flex justify-content-between align-items-center">
+        <input type="hidden" id="user" name="user" value="<%= user.seq %>">
+        <h2>메뉴 리스트</h2>
+        <button type="button" id="createMenuBtn" onclick="handleMenuCreate()" class="btn btn-primary ml-3">메뉴 생성하기</button>
+    </div>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">메뉴이름</th>
+                <th scope="col">설명</th>
+                <th scope="col">작성자</th>
+                <th scope="col">작성일</th>
+                <th scope="col">수정자</th>
+                <th scope="col">수정일</th>
+            </tr>
+        </thead>
+        <tbody id="menuList">
+            <% if (getMenuList && getMenuList.length > 0) { %>
+                <% getMenuList.forEach(function(menu) { %>
+                    <tr>
+                        <td><%= menu.seq %></td>
+                        <td><a href="/menus/<%= menu.seq %>"><%= menu.name %></a></td>
+                        <td><%= menu.description %></td>
+                        <td><%= menu.writer %></td>
+                        <td><%= menu.reg_date %></td>
+                        <td><%= menu.updater %></td>
+                        <td><%= menu.update_date %></td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="8">No menus found</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+

@@ -1,0 +1,46 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1><%= posterId %>의 게시글 목록</h1>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <td>게시글 번호</td>
+                        <th>게시글 제목</th>
+                        <td>작성일자</td>
+                        <td>새글 여부</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (postList && postList.length > 0) { %>
+                        <% postList.forEach((post, index) => { %>
+                            <tr>
+                                <td><%= post.seq %></td>
+                                <td><a href="/subscribe/poster/<%= post.writer %>/post/<%= post.seq %>"><%= post.title %></a></td>
+                                <td><%= post.reg_date %></td>
+                                <td>
+                                    <%  if (unreadPostSeq.includes(post.seq)) { %> 
+                                        <span style="color: red; border: 4px solid;">New</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="1">게시글이 없습니다.</td>
+                        <td colspan="1"></td>
+                        <td colspan="1"></td>
+                        <td colspan="1"></td>
+                    </tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>

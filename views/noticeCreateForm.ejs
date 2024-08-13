@@ -1,0 +1,28 @@
+<!-- <%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+<div class="container">
+    <h1 class="my-4">공지사항 만들기</h1>
+    <form id="createNoticeForm" action="/notice/create" method="POST">
+        <input type="hidden" name="writer" value="<%= user.seq %>">
+        <input type="hidden" name="updater" value="<%= user.seq %>">
+        <div class="form-group">
+            <label for="noticeName">제목</label>
+            <input type="text" class="form-control" id="noticeName" name="noticeName" placeholder="제목 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="noticeDescription">내용</label>
+            <textarea class="form-control" id="noticeDescription" name="noticeDescription" rows="3" placeholder="내용을 입력하세요" required></textarea>
+        </div>
+        <div class="form-group text-right">
+            <button type="submit" class="btn btn-primary">저장</button> 
+        </div>
+    </form>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->

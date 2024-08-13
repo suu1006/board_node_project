@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+
+        .signup-container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        section {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .button-group button {
+            width: calc(50% - 1.5px); /* 3px / 2 = 1.5px */
+            padding: 0.75rem;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-group button:first-child {
+            margin-right: 3px;
+        }
+
+        .button-group button:last-child {
+            margin-left: 3px;
+        }
+
+        .button-group button:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 480px) {
+            .signup-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+    <script>
+        function goBack() {
+            window.location.href = '/auth/loginPage';
+        }
+    </script>
+</head>
+<body>
+    <div class="signup-container">
+        <h1>관리자 회원가입</h1>
+        <form method="post" action="/auth/signup" id="form_signup">
+            <input type="hidden" name="userType" value="admin">
+            <input type="hidden" name="writer" value="0">
+            <input type="hidden" name="updater" value="0">
+            <section>
+                <label for="email">이메일</label>
+                <input id="email" name="email" type="email" autocomplete="email" required>
+            </section>
+            <section>
+                <label for="new-password">비밀번호</label>
+                <input id="new-password" name="password" type="password" autocomplete="new-password" required>
+            </section>
+            <section>
+                <label for="name">이름</label>
+                <input id="name" name="name" type="text" autocomplete="name" required>
+            </section>
+            <section>
+                <label for="birth">생년월일</label>
+                <input id="birth" name="birth" type="date" autocomplete="bday" required>
+            </section>
+            <section>
+                <label for="phone_number">핸드폰번호</label>
+                <input id="phone_number" name="phone_number" type="tel" autocomplete="tel" required>
+            </section>
+            <section>
+                <label for="nickname">별명</label>
+                <input id="nickname" name="nickname" type="text" autocomplete="nickname" required>
+            </section>
+
+            <div class="button-group">
+                <button type="button" onclick="goBack()">뒤로</button>
+                <button type="submit" class="btn btn-primary">저장</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

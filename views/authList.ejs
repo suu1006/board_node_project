@@ -1,0 +1,44 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+    <div class="container" style="padding : 30px">
+        <h2>권한 리스트
+            <a href="/auth/createPage" class="btn btn-primary btn-sm" style="margin-left: 10px;">권한 생성</a>
+        </h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">번호</th>
+                    <th scope="col">이름</th>
+                    <th scope="col">설명</th>
+                    <th scope="col">작성자</th>
+                    <th scope="col">작성일</th>
+                    <th scope="col">수정자</th>
+                    <th scope="col">수정일</th>
+                </tr>
+            </thead>
+            <tbody id="authList">
+                <% if (authList && authList.length > 0) { %>
+                    <% authList.forEach(function(auth) { %>
+                        <tr>
+                            <td><%= auth.seq %></td>
+                            <td><a href="/auth/<%= auth.seq %>"><%= auth.name %></a></td>
+                            <td><%= auth.description %></td>
+                            <td><%= auth.writer %></td>
+                            <td><%= auth.reg_date %></td>
+                            <td><%= auth.updater %></td>
+                            <td><%= auth.update_date %></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7">No permissions found</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>

@@ -1,0 +1,49 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %> 
+<div class="container" style="padding : 30px">
+    <div class="header-container d-flex justify-content-between align-items-center">
+        <h2 class="my-4">게시글 목록</h2>
+        <% if (user) { %>
+            <a href="/boards/createPage" class="btn btn-primary btn-create">게시물 생성하기</a>
+        <% } %>
+    </div>
+    <div class="table-container" style="height : 100%;">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">번호</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">내용</th>
+                    <th scope="col">작성자</th>
+                    <th scope="col">작성일</th>
+                    <th scope="col">수정자</th>
+                    <th scope="col">수정일</th>
+                </tr>
+            </thead>
+            <tbody id="postList">
+                <% if (boards && boards.length > 0) { %>
+                    <% boards.forEach(function(board) { %>
+                        <tr>
+                            <td><%= board.seq %></td>
+                            <td><a href="/boards/<%= board.seq %>"><%= board.title %></a></td>
+                            <td><%= board.content %></td>
+                            <td><%= board.writer %></td>
+                            <td><%= board.reg_date %></td>
+                            <td><%= board.updater %></td>
+                            <td><%= board.update_date %></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7">Not found</td>
+                    </tr>
+                <% } %>                        
+            </tbody>
+        </table>
+    </div>
+</div> 

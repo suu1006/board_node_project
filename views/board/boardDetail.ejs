@@ -1,0 +1,637 @@
+<%- contentFor('top') %>
+<%- include('../partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('../partials/left_side') %>
+
+<%- contentFor('body') %>
+<style>
+    .btn-group {
+        float: right;
+    }
+    .btn-group .btn {
+        margin-right: 10px; 
+    }
+    .container {
+        box-sizing: border-box; 
+
+    }
+    .form-container {
+        margin-bottom: 40px;
+    }
+    #commentContainer {
+        margin-top : 20px;
+    }
+    .comment-meta {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 14px;
+        gap: 20px;
+    }
+    .reco_button {
+        display: flex;
+        justify-content: right;
+    }
+
+    .comment-date {
+        font-size: 12px;
+        color: #888;
+    }
+    #recommentContainer {
+        padding-left: 73px;
+    }
+    .bottom_container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center; 
+        margin-top: 10px; 
+        font-size: 14px; 
+    }
+    .recommentBtn {
+        text-align: right;
+    }
+    .followBtn {
+        padding: 2px;
+        border: solid 4px;
+        border-color: pink;
+        color: black;
+        background: white;
+        margin-left: 11px;
+        width: 83px;
+        height: 41px;
+        margin-top: 23px;
+        transition: background-color 0.3s, color 0.3s; /* 부드러운 색상 전환 효과 */
+    }
+
+    .followBtn:hover {
+        background-color: pink; 
+        color: white; 
+        border-color: pink;
+    }
+</style>
+<script>
+    // 게시글 수정버튼 클릭 시
+    function handleUpdate() {
+        document.getElementById('updateTitle').removeAttribute('disabled');
+        document.getElementById('updateContent').removeAttribute('disabled');
+        document.getElementById('updateSaveBtn').style.display = 'block';
+        document.getElementById('updateBtn').style.display = 'none';
+    }
+
+    // 삭제 버튼 클릭 시  
+    function handleDelete() {
+        const seq = document.getElementById('updateSeq').value;
+        if (confirm('정말 삭제하시겠습니까?')) {
+            fetch (`/boards/delete/${seq}`, {
+                method: 'DELETE',
+            }).then(res => {
+                console.log(res.ok);
+                if(res.ok) {
+                    window.location.href = '/';
+                }
+            });
+        }
+    }
+
+    // 게시글 저장 버튼 클릭 시 
+    function handleSave() {
+        event.preventDefault();
+        const seq = document.getElementById('updateSeq').value;
+        const form = document.querySelector('#updateForm');
+        const formData = serializeForm(form);
+        const title = formData.title;
+        const content = formData.content;
+        formData.update_date = new Date().toISOString().slice(0, 10);
+
+        const prevTitle = document.getElementById('updateTitle').value;
+        const prevContent = document.getElementById('updateContent').value;
+        
+        if (title === '') {
+            alert('제목을 입력해주세요');
+            return;
+        } else if (content === '') {
+            alert('내용을 입력해주세요.');
+            return;
+        } else if (prevTitle === title && prevContent === content) { // 이전 내용과 같은지 검사
+            alert('수정된 내용이 없습니다.');
+            return;
+        }
+        
+        fetch(`/boards/update/${seq}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        }).then(res => {            
+            if(res.ok) {
+                window.location.reload();
+            }
+        }).catch(err => {
+            alert(err);
+            console.error('수정 실패', err);
+        });
+    }
+
+    function serializeForm(form) {
+        const obj = {};
+        const formData = new FormData(form);
+        formData.forEach((value, key) => {
+            obj[key] = value;
+        });
+        return obj;
+    }
+
+    // 게시글 목록 버튼 클릭 시 
+    function handleList() {
+        location.href = '/';
+    }
+
+    // 댓글 저장
+    function handleCommentSave(boardSeq) { // 게시글 seq
+        event.preventDefault(); // 폼 제출 방지
+        const commentContentElement = document.getElementById('commentContent'); // 댓글 내용
+        let commentContent = commentContentElement.value;        
+
+        if (commentContent === '') {
+            alert('댓글을 입력해주세요.');
+            return;
+        } else {
+            commentContent = commentContent.trim(); // 공백 제거
+        }
+        const commentData = {
+            commentContent: commentContent,
+            boardSeq: boardSeq,
+        };
+
+        fetch('/comments/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(commentData),
+        }).then(res => {
+            if (res.ok) {
+                // 댓글 내용 업데이트해서 보여주기                
+                document.getElementById('commentContent').value = commentContent;
+                window.location.reload(); // 페이지 새로고침
+            }
+        }).catch(err => {
+            alert('댓글 작성 실패');
+            console.error('댓글 작성 실패', err);
+        });
+    }
+
+    // 대댓글 폼 토글
+    function toggleRecommentForm(index) {
+        const recommentContainer = document.getElementById(`recommentContainer_${index}`);
+        
+        if (recommentContainer) {
+            const currentDisplay = window.getComputedStyle(recommentContainer).display; // 현재 display 상태
+            if (currentDisplay === 'none' || currentDisplay === '') {
+                recommentContainer.style.display = 'block';
+            } else {
+                recommentContainer.style.display = 'none';
+            }
+        } else {
+            console.error(`No element found with id recommentContainer_${index}`);
+        }
+    }
+
+    // 대댓글 저장
+    function handleRecommentSave(index) {
+        const recommentContentElement = document.getElementById(`recommentContent_${index}`);
+        const recommentContent = recommentContentElement ? recommentContentElement.value.trim() : ''; // 대댓글 내용
+        const boardSeq = document.querySelector('input[name="board_seq"]') ? document.querySelector('input[name="board_seq"]').value : ''; // 게시글 번호
+        const parentCommentSeq = document.querySelector(`#parentCommentSeq_${index}`) ? document.querySelector(`#parentCommentSeq_${index}`).value : ''; // 댓글번호
+
+        if (recommentContent === '') {
+            alert('댓글을 입력해주세요.');
+            return;
+        }
+
+        const recommentData = {
+            recommentContent: recommentContent, // 내용
+            boardSeq: boardSeq, // 게시글 번호
+            parentCommentSeq: parentCommentSeq // 댓글 번호
+        };
+        
+        fetch('/recomments/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(recommentData),
+        }).then(res => {
+            if (res.ok) {
+                window.location.reload(); // 페이지 새로고침
+            } else {
+                alert('대댓글 작성 실패');
+            }
+        }).catch(err => {
+            alert('대댓글 작성 실패');
+            console.error('대댓글 작성 실패', err);
+        });
+    }
+
+    // 댓글 대댓글 함수 분류
+    document.addEventListener('click', function(event) {
+        if (event.target.matches('button')) {
+            const type = event.target.getAttribute('data-type');
+            const id = event.target.getAttribute('data-id'); 
+            const commentSeqElement = document.getElementById(`commentSeq_${id}`);     
+            const commentSeq = commentSeqElement ? commentSeqElement.value : null; 
+            let reSeq;
+            let depth;
+            if (id !== null) {
+                reSeq = id.split('_')[0]; // 대댓글 seq
+                depth = id.split('_')[1]; // 대댓글 depth
+            }
+            if (type === 'edit') {
+                if (event.target.hasAttribute('data-recomment')) {
+                    editRecomment(depth, reSeq); // 대댓글 수정
+                } else {
+                    editComment(id, commentSeq); // 댓글 수정
+                }
+            } else if (type === 'delete') {
+                if (event.target.hasAttribute('data-recomment')) {
+                    deleteRecomment(depth, reSeq); // 대댓글 삭제
+                } else {
+                    deleteComment(id, commentSeq); // 댓글 삭제
+                }
+            }
+        }
+    });
+
+    // 댓글 수정 폼 변경
+    function editComment(id, commentSeq) {
+        const commentContainer = document.getElementById(`commentContentContainer_${id}`);
+        const pTag = document.getElementById(`commentContent_${id}`);
+        const boardSeq = document.getElementById("updateSeq").value;
+        
+        if (pTag) {
+            // 수정 버튼 중복 방지
+            if (document.getElementById(`commentContent_${id}_textarea`)) {
+                return;
+            }
+            const textarea = document.createElement('textarea');
+            textarea.className = 'form-control'; // bootstrap 제공
+            textarea.rows = 3; // 행
+            textarea.value = pTag.textContent.trim(); // 문자열의 앞뒤 공백 제거
+            textarea.id = `updateComment_${id}_textarea`; 
+
+            // 기존 p 태그를 textarea로 교체
+            commentContainer.replaceChild(textarea, pTag);
+
+            // 저장 버튼 추가
+            const saveButton = document.createElement('button');
+            saveButton.className = 'btn btn-primary';
+            saveButton.id = `comment_save_${id}`; 
+            saveButton.textContent = '저장';
+            saveButton.onclick = () => editCommentSave(commentSeq, id, boardSeq);
+            commentContainer.appendChild(saveButton);
+
+            // 취소 버튼 추가
+            const cancleButton = document.createElement('button');
+            cancleButton.className = 'btn btn-primary';
+            cancleButton.id = `comment_cancle_${id}`;
+            cancleButton.textContent = '취소';
+            cancleButton.onclick = () => window.location.reload();
+            commentContainer.appendChild(cancleButton);
+        } else {
+            console.error('pTag not found for ID:', id);
+            return;
+        }
+    }
+
+    // 댓글 수정 저장
+    function editCommentSave(commentSeq, id, boardSeq) {
+        const textarea = document.getElementById(`updateComment_${id}_textarea`);
+        const updatedContent = textarea ? textarea.value.trim() : '';    
+
+        fetch(`/comments/update/${commentSeq}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json', 
+            },
+            body: JSON.stringify({
+                seq: commentSeq, // 댓글의 seq 값
+                content: updatedContent, // 댓글 내용
+            }),
+        }).then(res => {
+            if (res.ok) {
+                window.location.href = `/boards/${boardSeq}`;
+            } else {
+                console.error('댓글 수정 실패: ', res.statusText);
+            }
+        }).catch(err => {
+            console.error('댓글 수정 실패', err);
+        });
+    }
+
+     // 댓글 삭제 저장
+    function deleteComment(id, commentSeq) {
+        if (confirm('정말 삭제하시겠습니까?')) {
+            fetch(`/comments/delete/${id}`, {
+                method: 'DELETE',
+                headers: {
+                'Content-Type': 'application/json', 
+                },
+                body: JSON.stringify({
+                    seq: commentSeq, // 댓글의 seq 값
+                }),
+            }).then(res => {
+                if (res.ok) {
+                    window.location.reload();
+                }
+            }).catch(err => {
+                console.error('댓글 삭제 실패', err);
+            });
+        }
+    }
+
+    // 대댓글 수정 폼 변경
+    function editRecomment(depth, reSeq) {
+        console.log('reSeq', reSeq); // 댓글 seq
+        console.log('depth', depth); // 대댓글 depth
+        const recommentContainer = document.getElementById(`recommentContentContainer_${reSeq}_${depth}`);
+        const pTag = document.getElementById(`recommentContent_${reSeq}_${depth}`);
+        const boardSeq = document.getElementById("updateSeq").value;
+
+        if (pTag) {
+            // 기존 textarea 및 버튼 확인
+            const existingTextarea = document.getElementById(`updateRecomment_${reSeq}_${depth}_textarea`);
+
+            // textarea 생성
+            const textarea = document.createElement('textarea');
+            textarea.className = 'form-control'; // Bootstrap 제공
+            textarea.rows = 3; // 행
+            textarea.value = pTag.textContent.trim(); 
+            textarea.id = `updateRecomment_${reSeq}_${depth}_textarea`; 
+
+            // 기존 p 태그를 textarea로 교체
+            recommentContainer.replaceChild(textarea, pTag);
+
+            // 저장 버튼 
+            const saveButton = document.createElement('button');
+            saveButton.className = 'btn btn-primary';
+            saveButton.id = `recomment_save_${reSeq}_${depth}`; 
+            saveButton.textContent = '저장';
+            saveButton.onclick = () => editRecommentSave(reSeq, depth, boardSeq);
+            recommentContainer.appendChild(saveButton);
+
+            // 취소 버튼 
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'btn btn-secondary'; 
+            cancelButton.id = `recomment_cancle_${reSeq}_${depth}`; 
+            cancelButton.textContent = '취소';
+            cancelButton.onclick = () => window.location.reload();
+            recommentContainer.appendChild(cancelButton);
+        } else {
+            console.error('pTag not found for ID:', id);
+        }
+    }
+
+    // 대댓글 수정 저장
+    function editRecommentSave(reSeq, depth, boardSeq) {
+        console.log('reSeq', reSeq);
+        console.log('depth', depth);
+        let textarea = document.getElementById(`updateRecomment_${reSeq}_${depth}_textarea`);
+        let updatedContent = textarea ? textarea.value.trim() : '';    
+        
+        console.log('textarea', textarea);
+        console.log('updatedContent', updatedContent);
+
+        fetch(`/recomments/update/${reSeq}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json', 
+            },
+            body: JSON.stringify({
+                seq: reSeq, 
+                content: updatedContent, 
+            }),
+        })
+        .then(res => {
+            if (res.ok) {
+                window.location.href = `/boards/${boardSeq}`;
+            } else {
+                console.error('대댓글 수정 실패');
+            }
+        }).catch(err => {
+            console.error('대댓글 수정 실패', err);
+        });
+    }
+
+    // 대댓글 삭제
+    function deleteRecomment(depth, reSeq) {
+        if (confirm('정말 삭제하시겠습니까?')) {
+            fetch(`/recomments/delete/${reSeq}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json', 
+                },
+                body: JSON.stringify({
+                    seq: reSeq, 
+                }),
+            }).then(res => {
+                if (res.ok) {
+                    window.location.reload();
+                }
+            }).catch(err => {
+                console.error('대댓글 삭제 실패', err);
+            });
+        }
+    }
+
+    // 팔로우 버튼 클릭 시  
+    function handleFollow(writer) {
+        // 유저 ID, 구독자(게시글 쓴 사람) ID 저장 
+        const poster_id = writer;
+        fetch (`/subscribe/createFollow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                poster_id: poster_id,
+            }),
+        }).then(res => {
+            console.log(res);
+            if(res.status === 200) {
+                alert('팔로우가 완료되었습니다.')
+                window.location.reload();
+            } else if(res.status === 400) {
+                alert('이미 팔로우한 사용자입니다.');
+            } else {
+                alert('팔로우 실패');
+            }
+        });
+    }
+
+    // 게시글 읽음 처리
+    function readPost(postId, writer) {
+        fetch('/subscribe/readPost', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ postId, writer }) // 게시물 번호, 게시물 작성자 번호
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+        })
+        .catch(err => {
+            console.error('게시글 상태 업데이트 실패', err);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const writer = document.getElementById('board_writer').value; // 게시물 작성자
+        const postId = document.getElementById('updateSeq').value; // 게시물 번호
+        readPost(postId, writer); // 읽음 처리
+    });
+    
+</script>
+<div class="container" style="height : 670px; overflow-y: auto;">
+    <div style="display: flex;">
+        <h2 class="my-4">게시물 상세</h2>
+        <% if (!isUserTrue && userType === 'user'){ %>
+        <button type="button" class="btn btn-primary followBtn" onclick="handleFollow('<%= boardData.writer %>')" id="followBtn">팔로우</button>
+        <% } %>
+    </div>
+    <input type="hidden" name="updateUserSeq" value="<%= user.seq %>">
+    <input type="hidden" id="userType" name="userType" value="<%= userType %>">
+    <input type="hidden" name="isUserTrue" value="<%= isUserTrue %>">
+    <form id="updateForm" onsubmit="handleSave(event)">
+        <input type="hidden" id="updateSeq" value="<%= boardData.seq %>">
+        <input type="hidden" id="board_writer" value="<%= boardData.writer %>">
+        <!-- 제목 -->
+        <div class="form-group">
+            <label for="title">제목</label>
+            <input type="text" class="form-control" id="updateTitle" name="updateTitle" value="<%= boardData.title %>" required disabled>
+        </div>
+        <!-- 내용 -->
+        <div class="form-group">
+            <label for="body">내용</label>
+            <textarea class="form-control" id="updateContent" name="updateContent" rows="5" required disabled><%= boardData.content %></textarea>
+        </div>
+        <input type="hidden" name="updater" value="<%= user.seq %>">
+        <!-- 게시글 수정/삭제/저장 버튼 -->
+        <% if (isUserTrue) { %>
+        <div class="btn-group" style="margin-top:20px;">
+            <button type="button" class="btn btn-primary" onclick="handleUpdate()" id="updateBtn">수정</button>
+            <button type="button" id="updateSaveBtn" onclick="handleSave()" style="display: none;" class="btn btn-primary">저장</button>
+            <button type="button" class="btn btn-danger" onclick="handleDelete()" id="deleteBtn">삭제</button>
+        </div>
+        <% } %>
+        <div>
+            <hr>
+        </div>
+        <% 
+            function formatDate(date) {
+                const d = new Date(date);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        %>
+        <!-- 댓글 리스트-->
+        <div class="container" style="margin-bottom:40px; margin-top:59px;">
+            <h3 class="my-4">댓글</h3>
+            <input type="hidden" name="commentListSeq" value="<%= commentList.seq %>">
+            <ul class="list-group" id="commentList">
+                <% if (commentList && commentList.length > 0) { %>
+                    <% commentList.forEach((comment, index) => { %>
+                        <li class="list-group-item">
+                            <input type="hidden" id="commentSeq_<%= index %>" value="<%= comment.dataValues.seq %>">
+                            <div class="comment-content-container" id="commentContentContainer_<%= index %>">
+                                <p id="commentContent_<%= index %>"><%= comment.dataValues.content %></p>
+                            </div>
+                            <div class="bottom_container">
+                                <div class="comment-meta">
+                                    <strong>작성자 ID: <%= comment.dataValues.writer %></strong>
+                                    <span class="comment-date">작성일: <%= formatDate(comment.dataValues.reg_date) %></span>
+                                </div>
+                                <% if (userType === 'user') { %>
+                                <div class="reco_button">
+                                    <button type="button" class="btn btn-primary" style="margin-right: 4px;" onclick="toggleRecommentForm('<%= index %>')">댓글 작성</button>
+                                    <div class="action-buttons">
+                                        <% if (comment.dataValues.writer === user.seq) { %>                                            
+                                            <button type="button" class="btn btn-primary" data-type="edit" data-id="<%= index %>">수정</button>
+                                            <button type="button" class="btn btn-danger"  data-type="delete" data-id="<%= index %>">삭제</button>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <% } %>
+                                <% if (userType === 'admin'){ %>
+                                    <button type="button" class="btn btn-danger"  data-type="delete" data-id="<%= index %>">삭제</button>
+                                <% } %>
+                            </div>
+                            
+                            <!-- 대댓글 작성 폼 -->
+                            <div class="recomment-container" id="recommentContainer_<%= index %>" style="display: none; margin-top: 20px;">
+                                <h5 class="my-4">댓글 작성</h5> 
+                                <input type="hidden" id="parentCommentSeq_<%= index %>" name="parent_comment_seq" value="<%= comment.dataValues.seq %>">
+                                <div class="form-group">
+                                    <textarea class="form-control" id="recommentContent_<%= index %>" name="recommentContent" rows="3"  placeholder="댓글을 입력하세요"></textarea>
+                                </div>
+                                <div style="float: right;">
+                                    <button type="button" class="btn btn-primary" onclick="handleRecommentSave('<%= index %>')">저장</button>
+                                    <button type="button" class="btn btn-primary" onclick="toggleRecommentForm('<%= index %>')">취소</button>
+                                </div>
+                            </div>  
+                        </li>
+
+                        <!-- 대댓글 리스트 -->
+                        <div class="recomment-list" id="recommentList_<%= index %>" style="margin-bottom: 30px;">
+                            <% if (recommentMap[comment.dataValues.seq]) { %>
+                                <% recommentMap[comment.dataValues.seq].forEach((recomment, recommentIndex) => { %>                                    
+                                    <input type="hidden" id="recommentSeq_<%= index %>" value="<%= recomment.dataValues.seq %>">
+                                    <div class="list-group-item" style="border-left: 1px solid black; margin-left:40px; ">
+                                        <div class="recomment-content-container" id="recommentContentContainer_<%= recomment.dataValues.seq %>_<%= recommentIndex %>">
+                                            <p id="recommentContent_<%= recomment.dataValues.seq %>_<%= recommentIndex %>"> <%= recomment.dataValues.content %></p>
+                                        </div>
+                                        <div class="recomment-meta">
+                                            <strong>작성자 ID: <%= recomment.dataValues.writer %></strong>
+                                            <span class="recomment-date">작성일: <%= formatDate(recomment.dataValues.reg_date) %></span>
+                                        </div>
+                                        <% if (((recomment.dataValues.writer === user.seq) && userType === 'user')) { %>  
+                                            <div class="recommentBtn">
+                                                <button type="button" class="btn btn-primary" data-type="edit" data-id="<%= recomment.dataValues.seq %>_<%= recommentIndex %>" data-recomment="true">수정</button>
+                                                <button type="button" class="btn btn-danger" data-type="delete" data-id="<%= recomment.dataValues.seq %>_<%= recommentIndex %>" data-recomment="true">삭제</button>
+                                            </div>                                            
+                                        <% } %>
+                                        <% if (userType === 'admin') { %>
+                                            <button type="button" class="btn btn-danger" data-type="delete" data-id="<%= recommentIndex %>" data-recomment="true">삭제</button>
+                                        <% } %>
+                                    </div>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <li class="list-group-item">댓글이 없습니다.</li>
+                <% } %>
+            </ul>
+        </div>
+        
+        <!-- 댓글 작성 폼 -->
+        <% if (userType === 'user') { %>
+                <div class="container" id="recommentContainer_<%= commentList.seq %>" style="margin-top: 20px;">
+                    <h5 class="my-4">댓글 작성</h5>
+                    <input type="hidden" name="board_seq" value="<%= boardData.seq %>">
+                    <div class="form-group">
+                        <textarea class="form-control" id="commentContent" name="commentContent" rows="3"  placeholder="댓글을 입력하세요"></textarea>
+                    </div>
+                    <button type="button" id="commentSave" style="float: right;" class="btn btn-primary" onclick="handleCommentSave('<%= boardData.seq %>')">저장</button>
+                </div>
+        <% } %>
+        <button type="button" class="btn btn-info" onclick="location.href='/'" id="listBtn">목록</button>
+    </form>
+</div>
+
+

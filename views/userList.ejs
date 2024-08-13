@@ -1,0 +1,41 @@
+<div class="container">
+    <h2>사용자 리스트</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">번호</th>
+                <th scope="col">이메일</th>
+                <th scope="col">이름</th>
+                <th scope="col">닉네임</th>
+                <th scope="col">생년월일</th>
+                <th scope="col">핸드폰 번호</th>
+                <th scope="col">작성자</th>
+                <th scope="col">등록일자</th>
+                <th scope="col">수정자</th>
+                <th scope="col">수정일자</th>
+            </tr>
+        </thead>
+        <tbody id="userList">
+            <% if (userList && userList.length > 0) { %>
+                <% userList.forEach(function(user) { %>
+                    <tr>
+                        <td><%= user.seq %></td>
+                        <td><%= user.email %></td>
+                        <td><%= user.name %></td>
+                        <td><%= user.nickname %></td>
+                        <td><%= user.birth %></td>
+                        <td><%= user.phone_number %></td>
+                        <td><%= user.writer %></td>
+                        <td><%= user.reg_date.toISOString().slice(0, 10) %></td>
+                        <td><%= user.updater || 'N/A' %></td>
+                        <td><%= user.update_date ? user.update_date.toISOString().slice(0, 10) : 'N/A' %></td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="10">No users found</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,79 @@
+<%- contentFor('top') %>
+<%- include('partials/top') %>
+
+<%- contentFor('left_side') %>
+<%- include('partials/left_side') %>
+
+<%- contentFor('body') %>
+<script>
+    function handleUpdate() {
+        document.getElementById('menuName').removeAttribute('disabled');
+        document.getElementById('menuURL').removeAttribute('disabled');
+        document.getElementById('menuDescription').removeAttribute('disabled');
+        document.getElementById('updateSaveBtn').style.display = 'block';
+        document.getElementById('updateBtn').style.display = 'none';
+    }
+    function validateForm(event) {
+        var menuURL = document.getElementById('menuURL').value;
+        if ( menuURL.startsWith('/')) {
+            alert('URL에는 슬래시("/")로 시작할 수 없습니다.');
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+    function handleDelete() {
+        event.preventDefault(); // 기본 폼 제출 방지
+
+        if (confirm('정말로 이 메뉴를 삭제하시겠습니까?')) {
+            const form = document.getElementById('updateMenuForm');
+            const seq = form.querySelector('input[name="seq"]').value;
+
+            fetch(`/menus/delete/${seq}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = '/menus'; // 성공 시 리다이렉트
+                } else {
+                    alert('삭제 실패');
+                }
+            }).catch(error => {
+                console.error('삭제 요청 오류:', error);
+            });
+        }
+    }
+</script>
+<div class="container">
+    <!-- 메뉴 수정 폼 -->
+    <h2 class="my-4">메뉴 수정</h2>
+    <form id="updateMenuForm" action="/menus/update/<%= menu.seq %>" method="POST" onsubmit="return validateForm(event);">
+        <input type="hidden" name="writer" value="<%= menu.writer %>">
+        <input type="hidden" name="updater" value="<%= menu.updater %>">
+        <input type="hidden" name="seq" value="<%= menu.seq %>">
+        <div class="form-group">
+            <label for="menuName">메뉴 이름</label>
+            <input type="text" class="form-control" id="menuName" name="menuName" value="<%= menu.name %>" disabled placeholder="메뉴 이름을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="menuURL">메뉴 URL</label>
+            <input type="text" class="form-control" id="menuURL" name="link" value="<%= menu.link %>" disabled placeholder="URL을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="menuDescription">메뉴 설명</label>
+            <textarea class="form-control" id="menuDescription" name="menuDescription" rows="3" disabled placeholder="메뉴 설명을 입력하세요" required><%= menu.description %></textarea>
+        </div>  
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" onclick="handleUpdate()" id="updateBtn">수정</button>
+            <button type="submit" id="updateSaveBtn"  style="display: none;" class="btn btn-primary">저장</button>
+            <button type="button" class="btn btn-danger" onclick="handleDelete()">삭제</button>
+        </div>  
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
